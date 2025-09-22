@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Recherche</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Recherche Véhicules</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Récupérer tous les véhicules</h2>
+        <button onclick="getAllVehicules()">Récupérer tous les véhicules</button>
+        <div id="result1" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Rechercher des véhicules</h2>
+        <input type="text" id="searchQuery" placeholder="Entrez une immatriculation..." value="GP656CM">
+        <button onclick="searchVehicules()">Rechercher</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Recherche avec marque</h2>
+        <input type="text" id="searchMarque" placeholder="Entrez une marque..." value="Ford">
+        <button onclick="searchByMarque()">Rechercher par marque</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4500/api';
+        
+        async function getAllVehicules() {
+            try {
+                const response = await fetch(`${API_BASE}/vehicules`);
+                const data = await response.json();
+                document.getElementById('result1').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result1').textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        async function searchVehicules() {
+            try {
+                const query = document.getElementById('searchQuery').value;
+                const response = await fetch(`${API_BASE}/vehicules/search?query=${encodeURIComponent(query)}&limit=10`);
+                const data = await response.json();
+                document.getElementById('result2').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result2').textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        async function searchByMarque() {
+            try {
+                const query = document.getElementById('searchMarque').value;
+                const response = await fetch(`${API_BASE}/vehicules/search?query=${encodeURIComponent(query)}&limit=10`);
+                const data = await response.json();
+                document.getElementById('result3').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result3').textContent = `Erreur: ${error.message}`;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.onload = function() {
+            getAllVehicules();
+        };
+    </script>
+</body>
+</html> 

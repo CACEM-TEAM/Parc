@@ -1,0 +1,5 @@
+config.json      # Fichier spécifique
+dist/           # Répertoire
+*.log           # Extension de fichier
+**/logs         # Répertoires imbriqués
+!app/           # Exclure de l'ignore (négation)
