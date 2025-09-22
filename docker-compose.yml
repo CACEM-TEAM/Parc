@@ -83,15 +83,25 @@ services:
     depends_on:
       - backend
     networks:
+      - proxy
       - parcauto_network
     volumes:
       - ./Front:/app
       - /app/node_modules
+    labels: 
+      - "traefik.enable=true" 
+      - "traefik.docker.network=proxy" 
+      - "traefik.http.routers.parc-secure.entrypoints=websecure" 
+      - "traefik.http.routers.parc-secure.rule=Host(`parcauto.cacem.fr`)" 
+      - "traefik.http.services.parc-secure.loadbalancer.server.port=3001" 
+      - "traefik.http.routers.parc-secure.tls=true" 
+      - "traefik.http.routers.parc-secure.tls.certresolver=myresolver"
 
 volumes:
   mysql_data:
     driver: local
 
 networks:
+  proxy:
   parcauto_network:
     driver: bridge 
