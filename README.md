@@ -64,9 +64,9 @@ start.bat
 ```
 
 ### URLs d'accès
-- **Application** : http://localhost:3000
-- **API Backend** : http://localhost:4500
-- **phpMyAdmin** : http://localhost:8080
+- **Application** : http://localhost:3001
+- **API Backend** : http://localhost:4501
+- **phpMyAdmin** : http://localhost:8083
 
 ## 📁 Structure du Projet
 
@@ -166,14 +166,4 @@ docker-compose build frontend
 docker-compose up -d frontend
 ```
 
-## 📞 Support
 
-Pour toute question ou problème :
-1. Vérifier la documentation
-2. Consulter les logs Docker
-3. Tester les endpoints API
-4. Contacter l'équipe de développement
-
----
-
-**ParcAuto** - Gestion intelligente de votre parc automobile 🚗✨ 
