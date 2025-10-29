@@ -1,0 +1,137 @@
+services:
+  # ----------------------------
+  # Base de données MySQL
+  # ----------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: parcauto_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - /vmdockers/Parc/dbappparcauto.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - parcauto_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # ----------------------------
+  # phpMyAdmin
+  # ----------------------------
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: parcauto_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: ${PMA_HOST}
+      PMA_PORT: 3306
+      PMA_USER: ${PMA_USER}
+      PMA_PASSWORD: ${PMA_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    expose:
+      - "80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - parcauto_network
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.parcauto-phpdb.entrypoints=websecure"
+      - "traefik.http.routers.parcauto-phpdb.rule=Host(`parcauto-phpdb.cacem.fr`)"
+      - "traefik.http.services.parcauto-phpdb.loadbalancer.server.port=80"
+      - "traefik.http.routers.parcauto-phpdb.tls=true"
+      - "traefik.http.routers.parcauto-phpdb.tls.certresolver=myresolver"
+
+  # ----------------------------
+  # Backend API (Node.js)
+  # ----------------------------
+  backend:
+    build:
+      context: ./Back
+      dockerfile: Dockerfile
+    container_name: parcauto_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: 3306
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    expose:
+      - "4501"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - proxy
+      - parcauto_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.parcauto-back.entrypoints=websecure"
+      - "traefik.http.routers.parcauto-back.rule=Host(`parcauto.cacem.fr`) && PathPrefix(`/api`)"
+      - "traefik.http.services.parcauto-back.loadbalancer.server.port=4501"
+      - "traefik.http.routers.parcauto-back.tls=true"
+      - "traefik.http.routers.parcauto-back.tls.certresolver=myresolver"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4501/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ----------------------------
+  # Frontend Vue.js
+  # ----------------------------
+  frontend:
+    build:
+      context: ./Front
+      dockerfile: Dockerfile.prod
+    container_name: parcauto_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+    expose:
+      - "3001"
+    depends_on:
+      - backend
+    networks:
+      - proxy
+      - parcauto_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.parc-secure.entrypoints=websecure"
+      - "traefik.http.routers.parc-secure.rule=Host(`parcauto.cacem.fr`)"
+      - "traefik.http.services.parc-secure.loadbalancer.server.port=3001"
+      - "traefik.http.routers.parc-secure.tls=true"
+      - "traefik.http.routers.parc-secure.tls.certresolver=myresolver"
+
+# ----------------------------
+# Volumes & réseaux
+# ----------------------------
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  proxy:
+    external: true
+  parcauto_network:
+    driver: bridge
+
